@@ -23,6 +23,7 @@
       align-items: center;
       padding: 16px;
       background-color: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .header h1 {
@@ -31,6 +32,7 @@
       margin: 0;
     }
 
+    /* Card Stack */
     .card-stack {
       position: relative;
       flex: 1;
@@ -42,11 +44,12 @@
 
     .card {
       position: absolute;
-      width: 400px;
+      width: 90%;
+      max-width: 400px;
       height: 250px;
       transition: transform 0.3s ease, opacity 0.3s ease;
+      border-radius: 10px;
     }
-
 
     .card:nth-child(1) {
       z-index: 4;
@@ -72,10 +75,10 @@
       opacity: 0.7;
     }
 
-
     /* Transactions Section */
     .transactions {
       padding: 16px;
+      overflow-y: auto;
     }
 
     .transactions-header {
@@ -96,6 +99,7 @@
       align-items: center;
       margin-bottom: 16px;
       padding-bottom: 8px;
+      border-bottom: 1px solid #e0e0e0;
     }
 
     .transaction-item img {
@@ -129,10 +133,13 @@
       font-size: 0.85rem;
       color: gray;
     }
+
     .date {
       font-size: 1rem;
       color: gray;
+      margin: 16px 0 8px;
     }
+
     /* Navigation Bar */
     .nav-bar {
       display: flex;
@@ -141,6 +148,9 @@
       padding: 8px 0;
       background-color: white;
       box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
     }
 
     .nav-item {
@@ -149,6 +159,10 @@
       color: gray;
       cursor: pointer;
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .nav-item.active {
@@ -158,12 +172,39 @@
       padding-top: 4px;
     }
 
-    .nav-item svg {
-      font-size: 1.5rem;
+    .nav-item img {
+      width: 24px;
+      height: 24px;
       margin-bottom: 4px;
     }
-    .nav-item.active svg  {
-      color: purple;
+
+    .nav-item.active img {
+      filter: hue-rotate(260deg) brightness(1.1);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 600px) {
+      .card {
+        width: 100%;
+        height: 200px;
+      }
+
+      .header h1 {
+        font-size: 1.25rem;
+      }
+
+      .transactions h2 {
+        font-size: 1.25rem;
+      }
+
+      .nav-bar {
+        padding: 8px 4px;
+      }
+
+      .nav-item img {
+        width: 20px;
+        height: 20px;
+      }
     }
   </style>
 </head>
@@ -171,9 +212,9 @@
 <body>
 
   <div class="header">
-    <img src="./assets/menu.svg"/>
+    <img src="./assets/menu.svg" />
     <h1>HOME</h1>
-    <img src="./assets/search.svg"/>
+    <img src="./assets/search.svg" />
   </div>
 
 
@@ -185,11 +226,11 @@
 
   </div>
 
- 
+
   <div class="transactions">
     <div class="transactions-header">
       <h2>Transactions</h2>
-      <img src="./assets/sort.svg"/>
+      <img src="./assets/sort.svg" />
     </div>
     <p class="date">Today, 06 July</p>
     <div class="transaction-item">
@@ -257,6 +298,7 @@
     <div class="nav-item" onclick="activateTab(this)"><img src="./assets/profile.svg" /><br>Profile</div>
   </div>
 
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const cardStack = document.getElementById("cardStack");
@@ -265,38 +307,31 @@
       let isSwiping = false;
       let startX, currentX, moveX;
 
-      cards.forEach((card) => {
-        card.addEventListener("pointerdown", (e) => {
-          isSwiping = true;
-          startX = e.clientX;
-          card.style.transition = "none";
-        });
+      function onPointerStart(e) {
+        isSwiping = true;
+        startX = e.type === "touchstart" ? e.touches[0].clientX : e.clientX;
+        e.target.style.transition = "none";
+      }
 
-        card.addEventListener("pointermove", (e) => {
-          if (!isSwiping) return;
-          currentX = e.clientX;
-          moveX = currentX - startX;
-          card.style.transform = `translateX(${moveX}px) rotate(${moveX / 10}deg)`;
-        });
+      function onPointerMove(e) {
+        if (!isSwiping) return;
+        currentX = e.type === "touchmove" ? e.touches[0].clientX : e.clientX;
+        moveX = currentX - startX;
+        e.target.style.transform = `translateX(${moveX}px) rotate(${moveX / 10}deg)`;
+      }
 
-        card.addEventListener("pointerup", () => {
-          if (!isSwiping) return;
-          isSwiping = false;
+      function onPointerEnd(e) {
+        if (!isSwiping) return;
+        isSwiping = false;
 
-          const threshold = 100; // Swipe threshold
-          if (Math.abs(moveX) > threshold) {
-            const direction = moveX > 0 ? "right" : "left";
-            handleSwipe(card, direction);
-          } else {
-            resetCard(card);
-          }
-        });
-
-        card.addEventListener("pointercancel", () => {
-          if (!isSwiping) return;
-          resetCard(card);
-        });
-      });
+        const threshold = 100;
+        if (Math.abs(moveX) > threshold) {
+          const direction = moveX > 0 ? "right" : "left";
+          handleSwipe(e.target, direction);
+        } else {
+          resetCard(e.target);
+        }
+      }
 
       function handleSwipe(card, direction) {
         const moveOutWidth = document.body.clientWidth * 1.5;
@@ -304,7 +339,6 @@
         card.style.transition = "transform 0.5s ease";
         card.style.transform = `translateX(${toX}px) rotate(${toX / 10}deg)`;
 
-        // Reorder the card stack
         setTimeout(() => {
           cardStack.appendChild(card);
           card.style.transition = "none";
@@ -327,10 +361,19 @@
         });
       }
 
+      cards.forEach((card) => {
+        card.addEventListener("mousedown", onPointerStart);
+        card.addEventListener("mousemove", onPointerMove);
+        card.addEventListener("mouseup", onPointerEnd);
+
+        card.addEventListener("touchstart", onPointerStart);
+        card.addEventListener("touchmove", onPointerMove);
+        card.addEventListener("touchend", onPointerEnd);
+      });
+
       updateStack();
     });
 
-    // Navigation Bar
     function activateTab(element) {
       const navItems = document.querySelectorAll(".nav-item");
       navItems.forEach((item) => item.classList.remove("active"));
